@@ -1,0 +1,14 @@
+{
+  "schema_version": 1,
+  "repository": "https://github.com/StatLean/Stat-Lean",
+  "commit": "855b6afb69fead1bef066111732ed44df181040e",
+  "lean_toolchain": "leanprover/lean4:v4.29.1",
+  "documentation_origin": "https://statlean.github.io/docs",
+  "module_prefixes": [
+    "StatLean.AsymptoticStatistics.DQM",
+    "StatLean.AsymptoticStatistics.ParametricFamily"
+  ],
+  "declaration_count": 154,
+  "featured_count": 4,
+  "corpus_sha256": "5ff4001a7b7b3ce0d0d024eb798aee700146a255bde10a42f94a931d08e242f0"
+}

@@ -1,0 +1,22 @@
+Stoogle's retrieval design follows LeanExplore
+(https://github.com/justincasher/lean-explore), licensed under Apache-2.0.
+A copy of its license is included in LICENSE-LeanExplore.
+
+Code adapted from LeanExplore at commit 6b25f8632cc3387cf85f7730375a690a1f1dfb79:
+
+- RenderedCode decoding in src/stoogle/corpus.py, from
+  src/lean_explore/extract/doc_parser.py. Modifications: strict error handling,
+  full signature reconstruction, signature-reference extraction, source-commit
+  validation and StatLean corpus export.
+- tokenize_spaced / tokenize_raw in src/stoogle/index.py, from
+  src/lean_explore/search/tokenization.py.
+- The description prompt and dependency-ordered generation in
+  src/stoogle/describe.py, from src/lean_explore/extract/prompt.txt and
+  informalize.py.
+- The Qwen3-Reranker yes/no scoring in src/stoogle/search.py follows
+  src/lean_explore/util/reranker_client.py and the Qwen3-Reranker model card.
+
+The test corpus in tests/fixtures/parametric-family is extracted from StatLean
+(https://github.com/StatLean/Stat-Lean, Copyright 2024 Junwei Lu, Apache-2.0)
+at the commit recorded in its manifest.json. StatLean's license text is
+reproduced in LICENSE-StatLean.

@@ -1,0 +1,27 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Stoogle · StatLean theorem search</title>
+  <link rel="stylesheet" href="/static/style.css">
+  <script src="/static/app.js" defer></script>
+</head>
+<body>
+  <header><a class="wordmark" href="/">stoogle<span> / StatLean</span></a><a href="https://statlean.github.io/website/">StatLean website ↗</a></header>
+  <main>
+    <p class="eyebrow">STATISTICS, FORMALLY CONNECTED</p>
+    <h1>Find the theorem<br>your proof needs.</h1>
+    <p class="intro">Describe a result in plain language (English or Chinese) or give its Lean name. See its full signature, the import it needs and its source at the indexed commit.</p>
+    <form id="search-form">
+      <label class="sr-only" for="query">Search theorems</label>
+      <div class="search-box"><input id="query" name="q" placeholder="e.g. the score function has mean zero" maxlength="2000" autocomplete="off" required><button type="submit">Search →</button></div>
+      <div class="filters"><label>Module <input id="module" placeholder="All (or a module prefix)"></label><label>Kind <select id="kind"><option value="">All declarations</option><option value="theorem">Theorem</option><option value="definition">Definition</option><option value="structure">Structure</option></select></label></div>
+    </form>
+    <div class="examples"><span>Try</span><button data-query="DQM">DQM</button><button data-query="Fisher information">Fisher information</button><button data-query="the score function has mean zero">the score function has mean zero</button></div>
+    <p id="snapshot" class="snapshot">Loading index information…</p>
+    <p id="status" role="status" aria-live="polite"></p>
+    <section id="results" aria-label="Search results"></section>
+  </main>
+  <footer><a href="https://github.com/StatLean/Stoogle">Stoogle on GitHub</a></footer>
+</body>
+</html>

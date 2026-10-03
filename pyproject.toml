@@ -1,0 +1,40 @@
+[build-system]
+requires = ["setuptools>=77"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "stoogle"
+version = "0.1.0"
+description = "Natural-language theorem search for StatLean"
+requires-python = ">=3.10"
+license = "Apache-2.0"
+license-files = ["LICENSE", "LICENSE-*", "NOTICE"]
+dependencies = [
+  "bm25s>=0.2,<0.4",
+  "numpy>=1.26",
+  "fastapi>=0.115,<0.116",
+  "uvicorn>=0.30,<0.36",
+  "mcp>=1.10,<2",
+  "httpx>=0.27,<1",
+  "beautifulsoup4>=4.12,<5",
+]
+
+[project.urls]
+Homepage = "https://github.com/StatLean/Stoogle"
+Issues = "https://github.com/StatLean/Stoogle/issues"
+
+[project.optional-dependencies]
+semantic = ["sentence-transformers>=5,<7", "transformers>=4.51", "torch>=2.2", "huggingface-hub"]
+test = ["pytest>=8,<10"]
+
+[project.scripts]
+stoogle = "stoogle.cli:main"
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[tool.setuptools.package-data]
+stoogle = ["static/*"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
