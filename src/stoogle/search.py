@@ -31,6 +31,9 @@ ALIASES = {
 }
 RRF_K = 60
 WEIGHTS = {"name": 1.0, "text": 1.0, "dense": 2.0}
+# Reranked order: 1 / (BLEND_K + reranker rank) + RETRIEVAL_WEIGHT / (BLEND_K + retrieval rank).
+BLEND_K = 1
+RETRIEVAL_WEIGHT = 0.5
 
 
 def expand_query(query):
@@ -40,6 +43,15 @@ def expand_query(query):
         if (alias.isascii() and alias in tokens) or (not alias.isascii() and alias in query):
             extra.append(text)
     return " ".join([query, *extra])
+
+
+def blend_rerank(scores):
+    """Order candidates, given in retrieval order, by reranker rank combined with retrieval rank."""
+    n = len(scores)
+    rerank_rank = np.empty(n)
+    rerank_rank[np.argsort(-np.asarray(scores), kind="stable")] = np.arange(1, n + 1)
+    score = 1 / (BLEND_K + rerank_rank) + RETRIEVAL_WEIGHT / (BLEND_K + np.arange(1, n + 1))
+    return np.argsort(-score, kind="stable")
 
 
 class Reranker:
@@ -70,7 +82,7 @@ class Reranker:
                            for d in documents[start:start + batch_size]]
                 batch = self.tokenizer(prompts, padding=True, truncation=True, max_length=1024,
                                        return_tensors="pt").to(self.device)
-                logits = self.model(**batch).logits[:, -1, :]
+                logits = self.model(**batch, logits_to_keep=1).logits[:, -1, :]
                 pair = self.torch.stack([logits[:, self.no], logits[:, self.yes]], 1).float()
                 scores += pair.softmax(1)[:, 1].tolist()
         return np.asarray(scores)
@@ -175,8 +187,7 @@ class Search:
             top = order[:max(limit, self.config.get("rerank_top", 20))]
             scores = self.reranker.score(query, [self._rerank_texts[i] for i in top])
             relevance = {i: float(s) for i, s in zip(top, scores)}
-            top = [top[j] for j in np.argsort(-scores, kind="stable")]
-            order = top + order[len(top):]
+            order = [top[j] for j in blend_rerank(scores)] + order[len(top):]
         folded = query.casefold()
         exact = [i for i in order if folded in (self.records[i]["name"].casefold(),
                                                 self.records[i]["name"].rsplit(".", 1)[-1].casefold())]

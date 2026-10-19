@@ -8,6 +8,7 @@ import subprocess
 import sys
 import time
 from pathlib import Path
+from types import SimpleNamespace
 
 import numpy as np
 import pytest
@@ -15,7 +16,7 @@ from fastapi.testclient import TestClient
 
 from stoogle.corpus import RenderedCode, export_corpus, plain, read_corpus, source_identity
 from stoogle.index import build_index
-from stoogle.search import Search, expand_query
+from stoogle.search import Reranker, Search, blend_rerank, expand_query
 
 SAMPLE = Path(__file__).parent / "fixtures" / "parametric-family"
 SCORE = "AsymptoticStatistics.Score.score_mean_zero"
@@ -300,9 +301,43 @@ def test_export_compiled_fixture(tmp_path):
 
 class FakeReranker:
     """Scores documents by whether they mention the query's first word."""
+    def __init__(self, match=0.95):
+        self.match = match
+
     def score(self, query, documents):
         word = query.split()[0].casefold()
-        return np.asarray([0.9 if word in d.casefold() else 0.1 for d in documents])
+        return np.asarray([self.match if word in d.casefold() else 0.05 for d in documents])
+
+
+def test_blend_rerank_combines_reranker_and_retrieval_ranks():
+    # The reranker ranks candidate 15 first and the retrieval leader second: the leader stays first.
+    scores = np.zeros(20)
+    scores[15], scores[0] = 0.99, 0.98
+    assert blend_rerank(scores)[:2].tolist() == [0, 15]
+    # The reranker's first choice moves above a retrieval leader it ranks third.
+    assert blend_rerank(np.asarray([0.2, 0.9, 0.5])).tolist() == [1, 0, 2]
+
+
+def test_reranker_scores_only_the_last_position():
+    torch = pytest.importorskip("torch")
+    requested = []
+
+    class Batch(dict):
+        def to(self, device):
+            return self
+
+    class Model:
+        def __call__(self, input_ids, logits_to_keep=0):
+            requested.append(logits_to_keep)
+            logits = torch.zeros(input_ids.shape[0], logits_to_keep or input_ids.shape[1], 3)
+            logits[:, -1, 2], logits[:, -1, 1] = 3.0, 1.0
+            return SimpleNamespace(logits=logits)
+
+    reranker = Reranker.__new__(Reranker)
+    reranker.torch, reranker.device, reranker.model, reranker.yes, reranker.no = torch, "cpu", Model(), 2, 1
+    reranker.tokenizer = lambda prompts, **kwargs: Batch(input_ids=torch.zeros(len(prompts), 8, dtype=torch.long))
+    assert reranker.score("query", ["a", "b", "c"], batch_size=2) == pytest.approx([1 / (1 + np.exp(-2.0))] * 3)
+    assert requested == [1, 1]
 
 
 def test_rerank_reorders_and_flags_low_confidence(index):
@@ -315,9 +350,12 @@ def test_rerank_reorders_and_flags_low_confidence(index):
             result = await search.search("fisherInformation of the model", limit=5)
             assert result["reranked"] and not result["low_confidence"]
             assert "fisherinformation" in result["results"][0]["name"].casefold()
-            assert result["results"][0]["relevance"] == 0.9
+            assert result["results"][0]["relevance"] == 0.95
             missing = await search.search("zzzz score", limit=5)
-            assert missing["low_confidence"] and missing["confidence"] == 0.1
+            assert missing["low_confidence"] and missing["confidence"] == 0.05
+            search._reranker = FakeReranker(match=0.7)
+            weak = await search.search("fisherInformation of the model", limit=5)
+            assert weak["low_confidence"] and weak["confidence"] == 0.7
             exact = await search.search("score_mean_zero", limit=3)
             assert exact["results"][0]["name"] == SCORE  # exact names stay pinned above reranking
         finally:
