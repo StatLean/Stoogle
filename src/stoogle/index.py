@@ -158,11 +158,12 @@ def build_index(corpus: Path, output: Path, mode="hybrid", model=DEFAULT_MODEL, 
             "query_prefix": embedder.query_prefix if embedder else None,
             "max_seq_length": embedder.model.max_seq_length if embedder else None,
             "reranker": reranker or None, "reranker_revision": reranker_revision if reranker else None,
-            "rerank_top": 20, "low_confidence_below": 0.5,
+            "rerank_top": 20, "low_confidence_below": 0.9,
             "corpus_sha256": manifest["corpus_sha256"],
             "embedding_cache": embedding_stats,
             "ranking": ("weighted RRF(k=60): name BM25 (1) + prose/signature BM25 (1) + dense cosine (2); "
-                        "optional cross-encoder rerank of the top candidates; exact names first"),
+                        "optional cross-encoder rerank of the top candidates, blended with their retrieval rank; "
+                        "exact names first"),
         }, indent=2) + "\n")
         staging.rename(output)
     except BaseException:

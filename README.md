@@ -50,7 +50,7 @@ Stoogle follows the retrieval design of [LeanExplore](https://github.com/justinc
 
 1. **Descriptions.** When an index is built, an LLM writes a short textbook-style description of each declaration. Declarations are described in dependency order, so the description of a lemma can draw on those of the concepts it uses.
 2. **Retrieval.** Keyword search (BM25) over names and over descriptions and signatures is combined with semantic search using [Qwen3-Embedding-0.6B](https://huggingface.co/Qwen/Qwen3-Embedding-0.6B).
-3. **Reranking.** [Qwen3-Reranker-0.6B](https://huggingface.co/Qwen/Qwen3-Reranker-0.6B) scores the top 20 candidates against the query. Its score is reported as `relevance`; when no candidate reaches 0.5, the response sets `low_confidence`, meaning StatLean may not contain the result.
+3. **Reranking.** [Qwen3-Reranker-0.6B](https://huggingface.co/Qwen/Qwen3-Reranker-0.6B) scores the top 20 candidates against the query, and they are reordered by their reranker rank combined with their retrieval rank. Its score is reported as `relevance`; when no candidate reaches 0.9, the response sets `low_confidence`, meaning StatLean may not contain the result.
 
 Exact Lean names always rank first. Reranking is on by default when a GPU is available and takes over ten seconds per query on a CPU; `--rerank on|off` overrides the default.
 
